@@ -30,5 +30,5 @@ int main() {
         total += netFuelReq(mass);
     }
     
-    std::cout << total;
+    std::cout << total << std::endl;
 }
