@@ -1,6 +1,6 @@
 #include<iostream>
 #include<vector>
-#include<map>
+#include<algorithm>
 #include<cmath>
 
 class coords {
@@ -13,11 +13,12 @@ class coords {
     }
     coords(int _x, int _y): x(_x), y(_y) {}
 
-    bool operator== (coords other) {
-        if(x == other.x && y == other.y) {
-                return true;
-        }
-        return false;
+    bool operator== (const coords& rhs) const {
+        return (x == rhs.x && y == rhs.y);
+    }
+
+    bool operator< (const coords & rhs) const {
+        return (x < rhs.x || (x == rhs.x && y < rhs.y));
     }
 };
 
@@ -70,13 +71,10 @@ auto map(std::vector<std::string> directions) -> std::vector<coords> {
 
 auto mapIntersection(std::vector<coords> wire1, std::vector<coords> wire2) -> std::vector<coords> {
     std::vector<coords> intersection;
-    for(auto coord_wire1 : wire1) {
-        for(auto coord_wire2 : wire2) {
-            if(coord_wire1 == coord_wire2) {
-                intersection.push_back(coord_wire1);
-            }
-        }
-    }
+    std::sort(wire1.begin(), wire1.end());
+    std::sort(wire2.begin(), wire2.end());
+    std::set_intersection(wire1.cbegin(), wire1.cend(), wire2.cbegin(), wire2.cend(), std::back_inserter(intersection));
+
     return intersection;
 }
 
@@ -177,7 +175,6 @@ int main() {
     
     std::vector<coords> intersection = mapIntersection(wire1_coords, wire2_coords);
 
-    
     part1(intersection);
 
     part2(intersection, wire1_coords, wire2_coords);
