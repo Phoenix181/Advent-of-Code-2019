@@ -13,7 +13,7 @@ class Intcode
     int parameter1Mode, parameter2Mode, parameter3Mode;
     int output;
 
-    bool signalAvail, phaseAvail;
+    bool signalAvail, phaseAvail, stop;
 
     void opcode_1()
     {
@@ -48,12 +48,11 @@ class Intcode
         }
         else if(signalAvail) {
             instructions[position] = signal;
-            signalAvail = false;
         }
-        /*else {
+        else {
             std::cout << "Input:";
             std::cin >> instructions[position];
-        }*/
+        }
     }
 
     void opcode_4()
@@ -116,15 +115,15 @@ class Intcode
     }
 
 public:
-    Intcode(std::vector<int> i, int _phase, int _signal) : instructions(i),
+    Intcode(std::vector<int> i, int _phase) : instructions(i),
                                                           opcode_position(0),
-                                                          output(-99),
                                                           phase(_phase),
-                                                          signal(_signal),
+                                                          stop(false),
                                                           signalAvail(true),
                                                           phaseAvail(true) {}
-    int compute()
+    int compute(int _ouput)
     {
+        signal = _ouput;
         int instructionMode = instructions[opcode_position];
         opcode = instructionMode % 100;
 
@@ -152,7 +151,7 @@ public:
             case 4:
                 opcode_4();
                 opcode_position += 2;
-                break;
+                return output;
             case 5:
                 opcode_5();
                 break;
@@ -174,7 +173,12 @@ public:
             instructionMode = instructions[opcode_position];
             opcode = instructionMode % 100;
         }
+        stop = true;
         return output;
+    }
+
+    bool toStop() {
+        return stop;
     }
 };
 
@@ -184,21 +188,64 @@ int amplifier(std::vector<int> instructions) {
     std::sort(range, range + 5);
     
     do {
-        Intcode amplifier1(instructions, range[0], 0);
-        int output1 = amplifier1.compute();
+        Intcode amplifier1(instructions, range[0]);
+        int output1 = amplifier1.compute(0);
 
-        Intcode amplifier2(instructions, range[1], output1);
-        int output2 = amplifier2.compute();
+        Intcode amplifier2(instructions, range[1]);
+        int output2 = amplifier2.compute(output1);
 
-        Intcode amplifier3(instructions, range[2], output2);
-        int output3 = amplifier3.compute();
+        Intcode amplifier3(instructions, range[2]);
+        int output3 = amplifier3.compute(output2);
 
-        Intcode amplifier4(instructions, range[3], output3);
-        int output4 = amplifier4.compute();
+        Intcode amplifier4(instructions, range[3]);
+        int output4 = amplifier4.compute(output3);
 
-        Intcode amplifier5(instructions, range[4], output4);
-        int output5 = amplifier5.compute();
+        Intcode amplifier5(instructions, range[4]);
+        int output5 = amplifier5.compute(output4);
         
+        if (output5 > higher) {
+            higher = output5;
+        }
+    } while(std::next_permutation(range, range + 5));
+    
+    return higher;
+}
+
+int amplifier_p2(std::vector<int> instructions) {
+    int range[5] = {5, 6, 7, 8, 9}; 
+    int higher = 0;
+    std::sort(range, range + 5);
+    
+    do {
+        int output1, output2, output3, output4, output5 = 0;
+        Intcode amplifier1(instructions, range[0]);
+        Intcode amplifier2(instructions, range[1]);
+        Intcode amplifier3(instructions, range[2]);
+        Intcode amplifier4(instructions, range[3]);
+        Intcode amplifier5(instructions, range[4]);
+
+        while(true) {
+x            output1 = amplifier1.compute(output5);
+            if(amplifier1.toStop())
+                break;
+
+            output2 = amplifier2.compute(output1);
+            if(amplifier2.toStop())
+                break;
+
+            output3 = amplifier3.compute(output2);
+            if(amplifier3.toStop())
+                break;
+
+            output4 = amplifier4.compute(output3);
+            if(amplifier4.toStop())
+                break;
+
+            output5 = amplifier5.compute(output4);
+            if(amplifier5.toStop())
+                break;
+        }
+
         if (output5 > higher) {
             higher = output5;
         }
@@ -219,6 +266,7 @@ int main() {
             input_stream.ignore();
     }
 
-    std::cout << "Final Ouput to thrusters: " <<  amplifier(instructions) << std::endl;
+    std::cout << "Final Ouput to thrusters: " << amplifier(instructions) << std::endl;
+    std::cout << "Final Ouput to thrusters (Feedback): " <<  amplifier_p2(instructions) << std::endl;
 
 }
